@@ -1,12 +1,12 @@
 # 📊 Netflix Data Analysis using PostgreSQL
 
 <p align="center">
-  <img src="images/netflix_banner.png" alt="Netflix Data Analysis Banner" width="100%">
+  <img src="images/netflix_banner.png" alt="Netflix Data Analysis Banner" width="900"/>
 </p>
 
-## 📌 Overview
+## 📌 Project Overview
 
-This project showcases end-to-end SQL data analysis on the **Netflix Movies and TV Shows** dataset using **PostgreSQL**. The objective is to solve real-world business problems by writing SQL queries and extracting meaningful insights from the dataset. The project demonstrates practical SQL skills including data filtering, aggregation, window functions, string manipulation, date functions, subqueries, and conditional logic.
+This project demonstrates end-to-end SQL data analysis on the Netflix Movies and TV Shows dataset using PostgreSQL. The objective is to answer real-world business questions by applying SQL concepts such as filtering, aggregation, window functions, string manipulation, date functions, subqueries, and conditional logic to extract meaningful insights.
 
 ---
 
@@ -17,8 +17,8 @@ This project showcases end-to-end SQL data analysis on the **Netflix Movies and 
 - Find the top countries producing Netflix content.
 - Analyze content based on release year and date added.
 - Identify the longest movies and TV shows with multiple seasons.
-- Explore content by directors, actors, and genres.
-- Categorize content using keyword-based analysis.
+- Find documentaries, missing directors, and actor appearances.
+- Categorize content using keyword-based classification.
 - Practice solving real-world SQL business problems.
 
 ---
@@ -35,12 +35,12 @@ This project showcases end-to-end SQL data analysis on the **Netflix Movies and 
 
 - **Dataset:** Netflix Movies & TV Shows
 - **Source:** Kaggle
-- **Records:** ~8,800
+- **Rows:** ~8,800
 - **Columns:** 12
 
 ---
 
-## 🗄️ Database Schema
+# 🗄️ Database Schema
 
 ```sql
 CREATE TABLE netflix(
@@ -61,242 +61,258 @@ CREATE TABLE netflix(
 
 ---
 
-# 📈 Business Problems & Solutions
+# 📈 Business Problems Solved
 
 ## 1️⃣ Count the Number of Movies vs TV Shows
 
-**Objective**
+### Objective
 
 Determine the distribution of Movies and TV Shows available on Netflix.
 
-**SQL Concepts Used**
+### SQL Query
 
-- GROUP BY
-- COUNT()
+```sql
+SELECT
+    type,
+    COUNT(*) AS total_content
+FROM netflix
+GROUP BY type;
+```
 
 ---
 
 ## 2️⃣ Find the Most Common Rating for Movies and TV Shows
 
-**Objective**
+### SQL Query
 
-Identify the most frequently occurring rating for each content type.
-
-**SQL Concepts Used**
-
-- Window Functions
-- RANK()
-- Aggregate Functions
+```sql
+SELECT
+    type,
+    rating
+FROM
+(
+SELECT
+    type,
+    rating,
+    COUNT(*) AS maximum_rating,
+    RANK() OVER(PARTITION BY type ORDER BY COUNT(*) DESC) AS ranking
+FROM netflix
+GROUP BY type, rating
+) AS t1
+WHERE ranking = 1;
+```
 
 ---
 
 ## 3️⃣ List All Movies Released in 2019
 
-**Objective**
-
-Retrieve all movies released in the year 2019.
-
-**SQL Concepts Used**
-
-- WHERE
-- Filtering
+```sql
+SELECT *
+FROM netflix
+WHERE type='Movie'
+AND release_year=2019;
+```
 
 ---
 
 ## 4️⃣ Find the Top 5 Countries with the Most Content
 
-**Objective**
-
-Identify the countries with the highest number of Netflix titles.
-
-**SQL Concepts Used**
-
-- STRING_TO_ARRAY()
-- UNNEST()
-- GROUP BY
+```sql
+SELECT
+    UNNEST(STRING_TO_ARRAY(country,',')) AS country,
+    COUNT(show_id) AS total_content
+FROM netflix
+GROUP BY 1
+ORDER BY 2 DESC
+LIMIT 5;
+```
 
 ---
 
 ## 5️⃣ Identify the Longest Movie
 
-**Objective**
-
-Find the movie with the longest duration.
-
-**SQL Concepts Used**
-
-- MAX()
-- Subquery
+```sql
+SELECT *
+FROM netflix
+WHERE type='Movie'
+AND duration=
+(
+SELECT MAX(duration)
+FROM netflix
+);
+```
 
 ---
 
-## 6️⃣ Find Content Added in the Last Five Years
+## 6️⃣ Find Content Added in the Last 5 Years
 
-**Objective**
-
-Retrieve content added to Netflix within the last five years.
-
-**SQL Concepts Used**
-
-- TO_DATE()
-- CURRENT_DATE
-- INTERVAL
+```sql
+SELECT *
+FROM netflix
+WHERE TO_DATE(date_added,'Month DD,YYYY')
+>= CURRENT_DATE - INTERVAL '5 years';
+```
 
 ---
 
 ## 7️⃣ Find Movies and TV Shows by Rajiv Chilaka
 
-**Objective**
-
-Retrieve all content directed by Rajiv Chilaka.
-
-**SQL Concepts Used**
-
-- LIKE
+```sql
+SELECT *
+FROM netflix
+WHERE director LIKE '%Rajiv Chilaka%';
+```
 
 ---
 
-## 8️⃣ List TV Shows with More Than Five Seasons
+## 8️⃣ List TV Shows with More Than 5 Seasons
 
-**Objective**
-
-Find TV Shows that have more than five seasons.
-
-**SQL Concepts Used**
-
-- CAST()
-- SPLIT_PART()
+```sql
+SELECT *
+FROM netflix
+WHERE type='TV Show'
+AND CAST(SPLIT_PART(duration,' ',1) AS INT) > 5;
+```
 
 ---
 
-## 9️⃣ Count the Number of Content Items in Each Genre
+## 9️⃣ Count Content Items in Each Genre
 
-**Objective**
-
-Calculate the number of titles available in each genre.
-
-**SQL Concepts Used**
-
-- STRING_TO_ARRAY()
-- UNNEST()
-- GROUP BY
+```sql
+SELECT
+    UNNEST(STRING_TO_ARRAY(listed_in,',')) AS genre,
+    COUNT(show_id) AS total_content
+FROM netflix
+GROUP BY 1;
+```
 
 ---
 
-## 🔟 Find the Average Number of Content Releases by India
+## 🔟 Find Each Year and the Average Content Released by India
 
-**Objective**
-
-Analyze yearly Netflix releases from India and identify the top years.
-
-**SQL Concepts Used**
-
-- EXTRACT()
-- ROUND()
-- Aggregate Functions
+```sql
+SELECT
+EXTRACT(YEAR FROM TO_DATE(date_added,'Month DD,YYYY')) AS year,
+COUNT(*),
+ROUND(
+COUNT(*)::NUMERIC /
+(
+SELECT COUNT(*)
+FROM netflix
+WHERE country='India'
+)*100,2
+) AS avg_content_per_year
+FROM netflix
+WHERE country='India'
+GROUP BY 1;
+```
 
 ---
 
 ## 1️⃣1️⃣ List All Documentary Movies
 
-**Objective**
-
-Retrieve all documentary movies available on Netflix.
-
-**SQL Concepts Used**
-
-- ILIKE
+```sql
+SELECT *
+FROM netflix
+WHERE type='Movie'
+AND listed_in ILIKE '%Documentaries%';
+```
 
 ---
 
 ## 1️⃣2️⃣ Find Content Without a Director
 
-**Objective**
-
-Identify titles where the director information is missing.
-
-**SQL Concepts Used**
-
-- NULL Handling
+```sql
+SELECT *
+FROM netflix
+WHERE director IS NULL;
+```
 
 ---
 
 ## 1️⃣3️⃣ Find Salman Khan Movies Released in the Last 10 Years
 
-**Objective**
-
-Retrieve content featuring Salman Khan released during the last decade.
-
-**SQL Concepts Used**
-
-- ILIKE
-- Date Functions
-
----
-
-## 1️⃣4️⃣ Find the Top 10 Actors Appearing in Indian Content
-
-**Objective**
-
-Identify the actors with the highest number of appearances in Indian Netflix titles.
-
-**SQL Concepts Used**
-
-- STRING_TO_ARRAY()
-- UNNEST()
-- GROUP BY
+```sql
+SELECT *
+FROM netflix
+WHERE casts ILIKE '%Salman Khan%'
+AND release_year >
+EXTRACT(YEAR FROM CURRENT_DATE)-10;
+```
 
 ---
 
-## 1️⃣5️⃣ Categorize Content Based on Keywords
+## 1️⃣4️⃣ Top 10 Actors Appearing in Indian Movies
 
-**Objective**
-
-Classify Netflix titles as **Good** or **Bad** based on keywords such as **kill** and **violence** in the description and count the number of titles in each category.
-
-**SQL Concepts Used**
-
-- CASE WHEN
-- ILIKE
-- Aggregate Functions
+```sql
+SELECT
+UNNEST(STRING_TO_ARRAY(casts,',')) AS actor,
+COUNT(*) AS total_content
+FROM netflix
+WHERE country ILIKE '%India%'
+GROUP BY 1
+ORDER BY 2 DESC
+LIMIT 10;
+```
 
 ---
 
-# 📚 SQL Concepts Covered
+## 1️⃣5️⃣ Categorize Content as Good or Bad
+
+```sql
+SELECT
+CASE
+WHEN description ILIKE '%kill%'
+OR description ILIKE '%violence%'
+THEN 'Bad Content'
+ELSE 'Good Content'
+END AS category,
+COUNT(*) AS total_content
+FROM netflix
+GROUP BY 1;
+```
+
+---
+
+# 🧠 SQL Concepts Used
 
 - SELECT
 - WHERE
-- DISTINCT
 - GROUP BY
 - ORDER BY
+- DISTINCT
 - Aggregate Functions
 - Window Functions
 - CASE WHEN
 - Subqueries
-- String Functions
 - Date Functions
+- String Functions
 - CAST()
 - SPLIT_PART()
 - STRING_TO_ARRAY()
 - UNNEST()
+- TO_DATE()
+- EXTRACT()
+- CURRENT_DATE
+- INTERVAL
 - NULL Handling
 
 ---
 
 # 📊 Key Insights
 
-- Movies account for the majority of Netflix's content library.
+- Movies make up the majority of Netflix's content library.
 - TV-MA is the most common content rating.
 - The United States and India contribute the highest number of titles.
-- Netflix experienced significant content growth after 2015.
-- Documentaries and International Movies are among the most common genres.
+- Netflix experienced rapid content growth after 2015.
+- International Movies and Documentaries are among the most popular genres.
 
 ---
 
 # 📁 Project Structure
 
 ```
-Netflix-Data-Analysis/
+Netflix-SQL-Project/
 │
 ├── README.md
 ├── dataset/
@@ -304,38 +320,27 @@ Netflix-Data-Analysis/
 │
 ├── sql/
 │   ├── create_table.sql
-│   └── business_queries.sql
+│   └── business_problems.sql
 │
 ├── images/
 │   ├── netflix_banner.png
-│   ├── query_1.png
-│   ├── query_2.png
-│   ├── ...
+│   ├── query1.png
+│   ├── query2.png
+│   └── ...
 │
 └── LICENSE
 ```
 
 ---
 
-## 🚀 Future Improvements
-
-- Perform SQL query optimization.
-- Build an interactive Power BI dashboard using the dataset.
-- Extend the project with additional analytical business questions.
-- Create stored procedures and views for reusable analysis.
-
----
-
-## 👩‍💻 Author
+# 👨‍💻 Author
 
 **Santhiya G**
 
-B.Tech – Artificial Intelligence & Data Science
+B.Tech Artificial Intelligence & Data Science
 
 Aspiring Data Analyst
 
-📧 Email: santhiya6741@gmail.com
-
 ---
 
-## ⭐ If you found this project helpful, consider giving it a star!
+## ⭐ If you found this project useful, don't forget to give it a Star!
