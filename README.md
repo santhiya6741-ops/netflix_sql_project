@@ -1,7 +1,7 @@
 # 📊 Netflix Data Analysis using PostgreSQL
 
 <p align="center">
-  <img src="images/netflix_banner.png" alt="Netflix Data Analysis" width="900">
+  <img src="https://github.com/santhiya6741-ops/netflix_sql_project/blob/main/images.png" alt="Netflix Data Analysis" width="900">
 </p>
 
 ## 📌 Overview
